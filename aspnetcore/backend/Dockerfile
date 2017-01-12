@@ -1,5 +1,7 @@
 FROM microsoft/dotnet
 
+EXPOSE 8080
+
 WORKDIR /app
 
 # copy project.json and restore as distinct layers
