@@ -1,21 +1,24 @@
 using System;
+using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 
 namespace Backend {
     public class Startup {
         private static readonly PathString _path = new PathString("/ingest/data");
+        private static readonly JsonSerializer _jsonSerializer = new JsonSerializer();
 
         public void Configure(IApplicationBuilder app) {
             app.Run(async context => 
             {
                 if (context.Request.Path.StartsWithSegments(_path, StringComparison.Ordinal))
                 {
-                    var response = $"hello, world";
-                    context.Response.ContentLength = response.Length;
-                    context.Response.ContentType = "text/plain";
-                    await context.Response.WriteAsync(response);
+                    Payload payload;
+                    using (var reader = new JsonTextReader(new StreamReader(context.Request.Body))) {
+                        payload = _jsonSerializer.Deserialize<Payload>(reader);
+                    }
                 }
                 else {
                     context.Response.StatusCode = 404;
@@ -33,4 +36,9 @@ namespace Backend {
             host.Run();
         }
     }
+
+    public class Payload
+    {
+        public string Data { get; set; }
+    }    
 }
