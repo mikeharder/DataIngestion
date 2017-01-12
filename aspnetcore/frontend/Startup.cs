@@ -25,7 +25,9 @@ namespace Frontend {
                         payload = _jsonSerializer.Deserialize<Payload>(reader);
                     }
 
-                    await RedirectPayload(payload, "http://aspnetcore-backend:8080/ingest/data");
+                    using (var response = await RedirectPayload(payload, "http://aspnetcore-backend:8080/ingest/data"))
+                    {
+                    }
                 }
                 else
                 {
@@ -34,7 +36,7 @@ namespace Frontend {
             });
         }
 
-        private static Task RedirectPayload(Payload payload, string url) {
+        private static async Task<HttpResponseMessage> RedirectPayload(Payload payload, string url) {
             using (var stream = new MemoryStream())
             using (var writer = new StreamWriter(stream))
             {
@@ -42,7 +44,7 @@ namespace Frontend {
                 writer.Flush();
                 stream.Seek(0, SeekOrigin.Begin);
                 
-                return _httpClient.PostAsync(url, new StreamContent(stream));
+                return await _httpClient.PostAsync(url, new StreamContent(stream));
             }
         }
 
