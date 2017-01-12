@@ -1,7 +1,6 @@
 package main
 
 import (
-    "bytes"
     "encoding/json"
     "net/http"
 )
@@ -18,22 +17,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         http.Error(w, http.StatusText(400), 400)
     }
-
-    err = redirectPayload(p, "http://go-backend:8080")
-    if err != nil {
-        http.Error(w, http.StatusText(502), 502)
-    }
-}
-
-func redirectPayload(p Payload, url string) error {
-    b := new(bytes.Buffer)
-    json.NewEncoder(b).Encode(p)
-    r, err := http.Post(url, "application/json; charset=utf-8", b)
-    if err != nil {
-        return err
-    }
-    defer r.Body.Close()
-    return nil
 }
 
 func main() {
