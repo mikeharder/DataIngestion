@@ -19,7 +19,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, http.StatusText(400), 400)
     }
 
-    err = redirectPayload(p, "http://go-backend:8080")
+    err = redirectPayload(p, "http://go-backend:8080/ingest/data")
     if err != nil {
         http.Error(w, http.StatusText(502), 502)
     }
@@ -37,6 +37,6 @@ func redirectPayload(p Payload, url string) error {
 }
 
 func main() {
-    http.HandleFunc("/", handler)
+    http.HandleFunc("/ingest/event", handler)
     http.ListenAndServe(":8080", nil)
 }
