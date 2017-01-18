@@ -6,17 +6,45 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
+using System.Threading;
 
 namespace Frontend {
     public class Startup
     {
         private static readonly PathString _path = new PathString("/ingest/event");
-        private static readonly HttpClient _httpClient = new HttpClient();
         private static readonly JsonSerializer _jsonSerializer = new JsonSerializer();
+
+        private static HttpClient[] _httpClients;
+        private static long _httpClientCounter = 0;
+
+        public Startup(IHostingEnvironment hostingEnvironment)
+        {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(hostingEnvironment.ContentRootPath)
+                .AddJsonFile("appsettings.json")
+                .AddEnvironmentVariables("DATAINGESTION_");
+
+            Configuration = builder.Build();
+        }
+
+        public IConfiguration Configuration { get; private set; }
 
         public void Configure(IApplicationBuilder app)
         {
-            app.Run(async context => 
+            var clients = int.Parse(Configuration["clients"]);
+            _httpClients = new HttpClient[clients];
+            for (var i = 0; i < clients; i++)
+            {
+                _httpClients[i] = new HttpClient();
+            }
+
+            bool tempBool;
+            var expectContinue = bool.TryParse(Configuration["expectContinue"], out tempBool) ? (bool?)tempBool : null;
+
+            Console.WriteLine($"Clients: {clients}, ExpectContinue: {expectContinue?.ToString() ?? "null"}");
+
+            app.Run(async context =>
             {
                 if (context.Request.Path.StartsWithSegments(_path, StringComparison.Ordinal))
                 {
@@ -25,7 +53,7 @@ namespace Frontend {
                         payload = _jsonSerializer.Deserialize<Payload>(reader);
                     }
 
-                    using (var response = await RedirectPayload(payload, "http://aspnetcore-backend:8080/ingest/data"))
+                    using (var response = await RedirectPayload(payload, "http://aspnetcore-backend:8080/ingest/data", expectContinue))
                     {
                     }
                 }
@@ -36,15 +64,23 @@ namespace Frontend {
             });
         }
 
-        private static async Task<HttpResponseMessage> RedirectPayload(Payload payload, string url) {
+        private static HttpClient NextHttpClient()
+        {
+            return _httpClients[Interlocked.Increment(ref _httpClientCounter) % _httpClients.Length];
+        }
+
+        private static async Task<HttpResponseMessage> RedirectPayload(Payload payload, string url, bool? expectContinue) {
             using (var stream = new MemoryStream())
             using (var writer = new StreamWriter(stream))
             {
                 _jsonSerializer.Serialize(writer, payload);
                 writer.Flush();
                 stream.Seek(0, SeekOrigin.Begin);
-                
-                return await _httpClient.PostAsync(url, new StreamContent(stream));
+
+                var m = new HttpRequestMessage(HttpMethod.Post, url);
+                m.Content = new StreamContent(stream);
+                m.Headers.ExpectContinue = expectContinue;
+                return await NextHttpClient().SendAsync(m);
             }
         }
 
