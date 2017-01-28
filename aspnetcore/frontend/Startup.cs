@@ -32,7 +32,8 @@ namespace Frontend
 
         public void Configure(IApplicationBuilder app)
         {
-            _clientLoadBalancer = new HttpClientLoadBalancer(int.Parse(Configuration["clients"]));
+            var clients = int.Parse(Configuration["clients"]);
+            _clientLoadBalancer = new HttpClientLoadBalancer(clients);
 
             var clientType = String.IsNullOrEmpty(Configuration["clientType"]) ? "full" : Configuration["clientType"];
 
