@@ -16,9 +16,7 @@ namespace Frontend
     {
         private static readonly PathString _path = new PathString("/ingest/event");
         private static readonly JsonSerializer _jsonSerializer = new JsonSerializer();
-
-        private static HttpClient[] _httpClients;
-        private static long _httpClientCounter = 0;
+        private static HttpClientLoadBalancer _clientLoadBalancer;
 
         public Startup(IHostingEnvironment hostingEnvironment)
         {
@@ -34,19 +32,11 @@ namespace Frontend
 
         public void Configure(IApplicationBuilder app)
         {
-            var clients = int.Parse(Configuration["clients"]);
-            _httpClients = new HttpClient[clients];
-            for (var i = 0; i < clients; i++)
-            {
-                _httpClients[i] = new HttpClient();
-            }
-
-            bool tempBool;
-            var expectContinue = bool.TryParse(Configuration["expectContinue"], out tempBool) ? (bool?)tempBool : null;
+            _clientLoadBalancer = new HttpClientLoadBalancer(int.Parse(Configuration["clients"]));
 
             var clientType = String.IsNullOrEmpty(Configuration["clientType"]) ? "full" : Configuration["clientType"];
 
-            Console.WriteLine($"ClientType: {clientType}, Clients: {clients}, ExpectContinue: {expectContinue?.ToString() ?? "null"}");
+            Console.WriteLine($"ClientType: {clientType}, Clients: {clients}");
 
             app.Run(async context =>
             {
@@ -57,7 +47,7 @@ namespace Frontend
                         payload = _jsonSerializer.Deserialize<Payload>(reader);
                     }
 
-                    using (var response = await RedirectPayload(payload, "http://aspnetcore-backend:8080/ingest/data", expectContinue, clientType))
+                    using (var response = await RedirectPayload(payload, "http://aspnetcore-backend:8080/ingest/data", clientType))
                     {
                     }
                 }
@@ -68,12 +58,7 @@ namespace Frontend
             });
         }
 
-        private static HttpClient NextHttpClient()
-        {
-            return _httpClients[Interlocked.Increment(ref _httpClientCounter) % _httpClients.Length];
-        }
-
-        private static async Task<HttpResponseMessage> RedirectPayload(Payload payload, string url, bool? expectContinue, string clientType) {
+        private static async Task<HttpResponseMessage> RedirectPayload(Payload payload, string url, string clientType) {
             using (var stream = new MemoryStream())
             using (var writer = new StreamWriter(stream))
             using (var content = new StreamContent(stream))
@@ -84,10 +69,7 @@ namespace Frontend
 
                 if (clientType == "full")
                 {
-                    var m = new HttpRequestMessage(HttpMethod.Post, url);
-                    m.Content = content;
-                    m.Headers.ExpectContinue = expectContinue;
-                    return await NextHttpClient().SendAsync(m);
+                    return await _clientLoadBalancer.PostAsync(url, content);
                 }
                 else if (clientType == "slim")
                 {
