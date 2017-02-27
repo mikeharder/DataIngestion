@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -30,14 +31,18 @@ namespace Frontend
 
         public IConfiguration Configuration { get; private set; }
 
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
+            loggerFactory.AddConsole(LogLevel.Error);
+
             var clients = int.Parse(Configuration["clients"]);
             _clientLoadBalancer = new HttpClientLoadBalancer(clients);
 
             var clientType = String.IsNullOrEmpty(Configuration["clientType"]) ? "full" : Configuration["clientType"];
 
-            Console.WriteLine($"ClientType: {clientType}, Clients: {clients}");
+            var backendUrl = Configuration["backend"] + "/ingest/data";
+
+            Console.WriteLine($"ClientType: {clientType}, Clients: {clients}, BackendUrl: {backendUrl}");
 
             app.Run(async context =>
             {
@@ -48,7 +53,7 @@ namespace Frontend
                         payload = _jsonSerializer.Deserialize<Payload>(reader);
                     }
 
-                    using (var response = await RedirectPayload(payload, "http://aspnetcore-backend:8080/ingest/data", clientType))
+                    using (var response = await RedirectPayload(payload, backendUrl, clientType))
                     {
                     }
                 }

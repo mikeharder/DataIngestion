@@ -1,13 +1,12 @@
-FROM microsoft/dotnet:1.1-sdk-projectjson
-
-ENV DATAINGESTION_BACKEND http://aspnetcore-backend-1.1:8080
+FROM microsoft/dotnet-nightly:2.0-sdk
 
 EXPOSE 8080
 
 WORKDIR /dotnetapp
 
 # copy project.json and restore as distinct layers
-COPY 1.1/project.json .
+COPY 2.0/*.csproj .
+COPY 2.0/NuGet.config .
 RUN dotnet restore
 
 # copy and build everything else
