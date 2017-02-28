@@ -33,6 +33,11 @@ func redirectPayload(p Payload, url string) error {
         return err
     }
     defer r.Body.Close()
+
+    // Body must be read so connection can be reused, otherwise client sockets will be exhausted
+    // http://tleyden.github.io/blog/2016/11/21/tuning-the-go-http-client-library-for-load-testing/
+    body, err := ioutil.ReadAll(resp.Body)
+
     return nil
 }
 
