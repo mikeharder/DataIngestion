@@ -26,10 +26,19 @@ func handler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+// Increase connection limits to improve connection reuse and prevent client socket exhaustion
+// http://tleyden.github.io/blog/2016/11/21/tuning-the-go-http-client-library-for-load-testing/
+var httpClient = &http.Client{
+    Transport: &http.Transport{
+        MaxIdleConns: 1024,
+        MaxIdleConnsPerHost: 1024,
+    },
+}
+
 func redirectPayload(p Payload, url string) error {
     b := new(bytes.Buffer)
     json.NewEncoder(b).Encode(p)
-    r, err := http.Post(url, "application/json; charset=utf-8", b)
+    r, err := httpClient.Post(url, "application/json; charset=utf-8", b)
     if err != nil {
         return err
     }
