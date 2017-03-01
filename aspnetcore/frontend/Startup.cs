@@ -73,14 +73,18 @@ namespace Frontend
                 writer.Flush();
                 stream.Seek(0, SeekOrigin.Begin);
 
-                if (clientType == "full")
+                if (clientType.Equals("full", StringComparison.OrdinalIgnoreCase))
                 {
                     return await _clientLoadBalancer.PostAsync(url, content);
                 }
-                else if (clientType == "slim")
+                else if (clientType.Equals("slim", StringComparison.OrdinalIgnoreCase))
                 {
                     var responseString = await HttpClientSlim.PostAsync(url, content);
                     return new HttpResponseMessage() { Content = new StringContent(responseString) };
+                }
+                else if (clientType.Equals("none", StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
                 }
                 else
                 {
