@@ -14,8 +14,6 @@ function init(args)
       r[i] = wrk.format(nil)
    end
 
-   print("Pipeline depth: " .. pipelineDepth)
-
    req = table.concat(r)
 end
 
