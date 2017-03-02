@@ -1,5 +1,7 @@
 FROM microsoft/dotnet-nightly:2.0.0-beta-sdk
 
+ENV ASPNETCORE_URLS http://+:8080
+
 EXPOSE 8080
 
 WORKDIR /dotnetapp

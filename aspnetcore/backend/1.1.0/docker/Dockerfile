@@ -1,5 +1,7 @@
 FROM microsoft/dotnet:1.1.0-sdk-msbuild-rc4
 
+ENV ASPNETCORE_URLS http://+:8080
+
 EXPOSE 8080
 
 WORKDIR /dotnetapp

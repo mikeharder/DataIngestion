@@ -1,5 +1,6 @@
 FROM microsoft/dotnet-nightly:2.0.0-beta-sdk
 
+ENV ASPNETCORE_URLS http://+:8080
 ENV DATAINGESTION_BACKEND http://aspnetcore-backend-2.0.0-beta:8080
 
 EXPOSE 8080

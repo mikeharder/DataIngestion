@@ -1,5 +1,6 @@
 FROM microsoft/dotnet:1.1.0-sdk-msbuild-rc4
 
+ENV ASPNETCORE_URLS http://+:8080
 ENV DATAINGESTION_BACKEND http://aspnetcore-backend-1.1.0:8080
 
 EXPOSE 8080

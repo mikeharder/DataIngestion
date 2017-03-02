@@ -96,7 +96,7 @@ namespace Frontend
         public static void Main(string[] args)
         {
             var hostBuilder = new WebHostBuilder()
-                .UseUrls("http://+:8080")
+                .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseKestrel()
                 .UseStartup<Startup>();
 

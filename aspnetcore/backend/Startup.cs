@@ -28,7 +28,6 @@ namespace Backend {
 
         public static void Main(string[] args) {
             var hostBuilder = new WebHostBuilder()
-                .UseUrls("http://+:8080")
                 .UseKestrel()
                 .UseStartup<Startup>();
 
