@@ -46,6 +46,8 @@ var httpClient = &http.Client{
     },
 }
 
+var fastHttpClient = &fasthttp.Client{}
+
 func redirectPayloadNetHttp(p Payload, url string) error {
     b := new(bytes.Buffer)
     json.NewEncoder(b).Encode(p)
@@ -74,14 +76,11 @@ func redirectPayloadFastHttp(p Payload, url string) error {
     req.SetBody(b.Bytes())
 
     resp := fasthttp.AcquireResponse()
-    client := &fasthttp.Client{}
-    client.Do(req, resp)
+    fastHttpClient.Do(req, resp)
 
     if resp.StatusCode() != 200 {
         return errors.New(strconv.Itoa(resp.StatusCode()))
     }
-
-    _ = resp.Body()
 
     fasthttp.ReleaseResponse(resp);
     fasthttp.ReleaseRequest(req);
