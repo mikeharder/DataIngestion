@@ -15,9 +15,14 @@ type Payload struct {
     Data string `json:"data"`
 }
 
+var _, noop = os.LookupEnv("NOOP")
 var _, usefasthttp = os.LookupEnv("FASTHTTP")
 
 func handler(w http.ResponseWriter, r *http.Request) {
+    if noop {
+        return
+    }
+
     decoder := json.NewDecoder(r.Body)
 
     var p Payload
